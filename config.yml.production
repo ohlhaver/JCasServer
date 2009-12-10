@@ -1,0 +1,122 @@
+##### SERVER SETUP ################################################################
+
+server: passenger
+# port: 443
+# ssl_cert: ssl/production.pem
+# If your private key is in a separate file from the cert
+#ssl_key: /path/to/your/private_key.pem
+
+# If you do not already have an SSL certificate and would like to automatically
+# generate one, run the "generate_ssl_certificate" rake task and use the following 
+# settings:
+#  ssl_cert: ssl/cert.pem
+#  ssl_key: ssl/key.pem
+
+
+#uri_path: /cas
+#bind_address: 0.0.0.0
+
+###
+### Phusion Passenger (running under Apache configured for SSL)
+###
+# Here's an example Apache vhost config for RubyCAS-Server and Passenger:
+#
+#  Listen 443
+#  <VirtualHost *:442>
+#     ServerAdmin admin@example.net
+#     ServerName login.example.net
+#
+#     SSLEngine On
+#     SSLCertificateFile /etc/apache2/ssl.crt/example.pem
+#
+#     RailsAutoDetect off
+#
+#     DocumentRoot /usr/lib/ruby/gems/1.8/gems/rubycas-server-0.8.0/public
+#
+#     <Directory "/usr/lib/ruby/gems/1.8/gems/rubycas-server-0.8.0/public">
+#       AllowOverride all
+#       Allow from all
+#     </Directory>
+#  </VirtualHost>
+#
+
+
+##### DATABASE #################################################################
+
+database:
+  adapter: mysql
+  database: casserver
+  username: jurnalo
+  password: jp4t2db
+  host: localhost
+  
+##### AUTHENTICATION ###########################################################
+
+authenticator:
+  - class: CASServer::Authenticators::SQLAuthlogic
+    database:
+      adapter: mysql
+      database: tier2_db_prod
+      username: jurnalo
+      password: jp4t2db
+      host: 10.176.228.50
+      reconnect: true
+    user_table: users
+    username_column: login
+    password_column: crypted_password
+    salt_column: password_salt
+    encryptor: Sha256
+    extra_attributes: id
+  - class: CASServer::Authenticators::Google
+
+##### LOOK & FEEL ##############################################################
+
+# Set the path to the theme directory that determines how your CAS pages look. 
+#
+# Custom themes are not well supported yet, but will be in the near future. In 
+# the meantime, if you want to create a custom theme, you can create a 
+# subdirectory under the CASServer's themes dir (for example, 
+# '/usr/lib/ruby/1.8/gems/casserver-xxx/public/themes', if you installed CASServer 
+# on Linux as a gem). A theme is basically just a theme.css file that overrides 
+# the themes/cas.css styles along with a collection of image files
+# like logo.png and bg.png.
+#
+# By default, we use the 'simple' theme which you can find in themes/simple.
+theme: simple
+organization: Jurnalo
+infoline: Personalized News Engine
+
+# Custom views file.  Overrides methodes in lib/casserver/views.rb
+#custom_views_file: /path/to/custom/views.rb
+
+##### LOCALIZATION (L10N) #######################################################
+default_locale: en
+
+##### LOGGING ##################################################################
+
+log:
+  file: log/casserver.log
+  level: INFO
+
+# If you want full database logging, uncomment this next section.
+# Every SQL query will be logged here. This is useful for debugging database 
+# problems.
+#
+#db_log:
+#  file: /var/log/casserver_db.log
+
+##### SINGLE SIGN-OUT ##########################################################
+
+# When a user logs in to a CAS-enabled client application, that application
+# generally opens its own local user session. When the user then logs out
+# through the CAS server, each of the CAS-enabled client applications need
+# to be notified so that they can close their own local sessions for that user.
+
+#enable_single_sign_out: true
+
+##### OTHER ####################################################################
+
+maximum_unused_login_ticket_lifetime: 300
+maximum_unused_service_ticket_lifetime: 300
+maximum_session_lifetime: 172800
+downcase_username: true
