@@ -19,8 +19,8 @@
 #
 server: webrick
 port: 443
-ssl_cert: /Users/ram/Workspace/jurnalo/JCasServer/ssl/development.pem
-
+ssl_cert: /Users/ram/Workspace/jurnalo/JCasServer/ssl/development.cert.pem
+ssl_key: /Users/ram/Workspace/jurnalo/JCasServer/ssl/development.cert.key
 # If your private key is in a separate file from the cert
 
 #ssl_key: /path/to/your/private_key.pem
