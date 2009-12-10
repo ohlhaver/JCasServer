@@ -1,6 +1,9 @@
 module CASServer
   module Authenticators
     class Base
+      
+      EmailRegex = /^[A-Z0-9_\.%\+\-]+@(?:[A-Z0-9\-]+\.)+(?:[A-Z]{2,4}|museum|travel)$/i
+      
       attr_accessor :options
       attr_reader :username # make this accessible so that we can pick up any 
                             # transformations done within the authenticator

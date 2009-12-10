@@ -12,7 +12,8 @@ class CASServer::Authenticators::Google < CASServer::Authenticators::Base
     read_standard_credentials(credentials)
 
     return false if @username.blank? || @password.blank?
-   
+    return false unless EmailRegex.match( @username )
+    
     auth_data = {
       'Email'   => @username, 
       'Passwd'  => @password, 
@@ -37,6 +38,7 @@ class CASServer::Authenticators::Google < CASServer::Authenticators::Base
         
         case res
         when Net::HTTPSuccess
+          @extra_attributes = { 'auth' => 'google' }
           true
         when Net::HTTPForbidden
           false
