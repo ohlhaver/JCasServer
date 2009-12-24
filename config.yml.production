@@ -67,6 +67,7 @@ authenticator:
     salt_column: password_salt
     encryptor: Sha256
     extra_attributes: id
+  - class: CASServer::Authenticators::Facebook
   - class: CASServer::Authenticators::Google
 
 ##### LOOK & FEEL ##############################################################
