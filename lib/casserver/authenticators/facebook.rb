@@ -26,7 +26,7 @@ class CASServer::Authenticators::Facebook < CASServer::Authenticators::Base
     begin
       timeout( wait_seconds ) do
         post_login_page = login_form.submit
-        if ( post_login_page.uri.to_s ==  "http://www.facebook.com/home.php?" ) then
+        if ( post_login_page.uri.to_s ==  "http://www.facebook.com/home.php?" ) || post_login_page.forms.first.has_field?('answered_captcha') then
           @extra_attributes = { 'auth' => 'facebook' }
           true
         else
