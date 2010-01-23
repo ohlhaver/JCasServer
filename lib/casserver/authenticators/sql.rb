@@ -59,7 +59,7 @@ class CASServer::Authenticators::SQL < CASServer::Authenticators::Base
     
     raise CASServer::AuthenticatorError, "Cannot validate credentials because the authenticator hasn't yet been configured" unless @options
     
-    user_model = establish_database_connection_if_necessary
+    user_model, preference_model = establish_database_connection_if_necessary
     
     username_column = @options[:username_column] || 'username'
     password_column = @options[:password_column] || 'password'
@@ -112,8 +112,23 @@ class CASServer::Authenticators::SQL < CASServer::Authenticators::Base
       user_model.establish_connection(options[:database])
       user_model.set_table_name @options[:user_table] || "users"
     end
+    
+    preference_model_name = "CAPref_#{@options[:auth_index]}"
+    if self.class.const_defined?(preference_model_name)
+      $LOG.debug "REUSING USER MODEL #{preference_model_name}"
+      preference_model = self.class.const_get(preference_model_name)
+    else
+      $LOG.debug "CREATING USER MODEL #{preference_model_name}"
+      self.class.class_eval %{
+        class #{preference_model_name} < ActiveRecord::Base
+        end
+      }
+      preference_model = self.class.const_get(preference_model_name)
+      preference_model.establish_connection(options[:database])
+      preference_model.set_table_name @options[:preference_table] || "preferences"
+    end
 
-    user_model
+    [ user_model, preference_model ]
   end
 
 end

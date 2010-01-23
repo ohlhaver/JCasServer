@@ -48,12 +48,13 @@ class CASServer::Authenticators::SQLAuthlogic < CASServer::Authenticators::SQL
     
     raise CASServer::AuthenticatorError, "Cannot validate credentials because the authenticator hasn't yet been configured" unless @options
     
-    user_model = establish_database_connection_if_necessary
+    user_model, preference_model = establish_database_connection_if_necessary
     
-    username_column = @options[:username_column] || "login"
-    password_column = @options[:password_column] || "crypted_password"
-    salt_column = @options[:salt_column]
-    results = user_model.find(:all, :conditions => ["#{username_column} = ?", @username])
+    username_column = @options[:user_attributes][:username]
+    password_column = @options[:user_attributes][:password]
+    salt_column     = @options[:user_attributes][:salt]
+    
+    results = user_model.find(:all, :select => @options[:user_attributes].values.join(',') , :conditions => ["#{username_column} = ?", @username])
 
     begin
       encryptor = eval("Authlogic::CryptoProviders::" + @options[:encryptor] || "Sha512")
@@ -67,25 +68,23 @@ class CASServer::Authenticators::SQLAuthlogic < CASServer::Authenticators::SQL
       tokens = [@password, (not salt_column.nil?) && user.send(salt_column) || nil].compact
       crypted = user.send(password_column)
 
-      unless @options[:extra_attributes].blank?
-        if results.size > 1
-          $LOG.warn("#{self.class}: Unable to extract extra_attributes because multiple matches were found for #{@username.inspect}")
-        else
-          
-          @extra_attributes = {}
-          extra_attributes_to_extract.each do |col|
-            @extra_attributes[col] = user.send(col)
-          end
-          @extra_attributes['auth'] = 'jurnalo'
-          
-          if @extra_attributes.empty?
-            $LOG.warn("#{self.class}: Did not read any extra_attributes for user #{@username.inspect} even though an :extra_attributes option was provided.")
-          else
-            $LOG.debug("#{self.class}: Read the following extra_attributes for user #{@username.inspect}: #{@extra_attributes.inspect}")
-          end
-        end
+      @extra_attributes = { 'auth' => 'jurnalo' }
+      
+      user_id_column = @options[:preference_attributes][:user_id]
+      user_type_column = @options[:preference_attributes][:user_type]
+      conditions = { user_id_column => user.id }
+      conditions.merge!( user_type_column => (@options[:users_table] || 'users').classify ) unless user_type_column.blank?
+      preference = preference_model.find( :first, :select => @options[:preference_attributes].values.join(','), :conditions => conditions )
+      @options[:preference_attributes].each do | key, value |
+        next if [ user_id_column, user_type_column ].include?( value )
+        @extra_attributes[ key.to_s ] = preference.send( value )
       end
-
+      @options[:user_attributes].each do | key, value |
+        next if [ username_column, password_column, salt_column ].include?( value )
+        @extra_attributes[ key.to_s ] = user.send( value )
+      end
+      $LOG.debug("#{self.class}: Read the following extra_attributes for user #{@username.inspect}: #{@extra_attributes.inspect}")
+      
       return encryptor.matches?(crypted, tokens)
     else
       return false
