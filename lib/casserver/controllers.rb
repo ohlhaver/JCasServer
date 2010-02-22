@@ -72,24 +72,26 @@ module CASServer::Controllers
       # embed the login form in some external page (as an IFRAME, or otherwise).
       # The optional 'submitToURI' parameter can be given to explicitly set the
       # action for the form, otherwise the server will try to guess this for you.
-      if input.has_key? 'onlyLoginForm'
+      input['format'] ||= 'form' if input.has_key?( 'onlyLoginForm' )
+      case( input['format'] ) when 'form'
         if @env['HTTP_HOST']
           guessed_login_uri = "http#{@env['HTTPS'] && @env['HTTPS'] == 'on' ? 's' : ''}://#{@env['REQUEST_URI']}#{self / '/login'}"
         else
           guessed_login_uri = nil
         end
-
         @form_action = input['submitToURI'] || guessed_login_uri
-        
         if @form_action
           render :login_form
         else
           @status = 500
           _("Could not guess the CAS login URI. Please supply a submitToURI parameter with your request.")
         end
+      when 'js'
+        render :login_js
       else
         render :login
       end
+      
     end
     
     # 2.2
@@ -98,6 +100,7 @@ module CASServer::Controllers
       
       # 2.2.1 (optional)
       @service = clean_service_url(input['service'])
+      @on_error_url = clean_service_url(input['oe'])
       
       # 2.2.2 (required)
       @username = input['username']
@@ -117,7 +120,7 @@ module CASServer::Controllers
         # generate another login ticket to allow for re-submitting the form
         @lt = generate_login_ticket.ticket
         @status = 401
-        return render(:login)
+        return render_login
       end
       
       # generate another login ticket to allow for re-submitting the form after a post
@@ -152,7 +155,7 @@ module CASServer::Controllers
       rescue CASServer::AuthenticatorError => e
         $LOG.error(e)
         @message = {:type => 'mistake', :message => e.to_s}
-        return render(:login)
+        return render_login
       end
       
       if credentials_are_valid
@@ -202,8 +205,19 @@ module CASServer::Controllers
         @status = 401
       end
       
-      render :login
+      render_login
     end
+    
+    protected 
+    
+    def render_login
+      if @on_error_url
+        redirect(@on_error_url)
+      else
+        render :login
+      end
+    end
+    
   end
   
   # 2.3

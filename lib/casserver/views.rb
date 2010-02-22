@@ -101,6 +101,10 @@ module CASServer::Views
     end
   end
   
+  def login_js
+    %Q( var login_ticket = '#{@lt}'; )
+  end
+  
   # 2.3.2
   def logout
     @use_layout = true
