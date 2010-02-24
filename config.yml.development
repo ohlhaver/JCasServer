@@ -469,7 +469,7 @@ maximum_unused_service_ticket_lifetime: 300
 # the maximum lifetime of tickets on the CAS server.
 
 maximum_session_lifetime: 172800
-
+remember_me_session_lifetime: 864000
 
 # If you want the usernames entered on the login page to be automatically 
 # downcased (converted to lowercase), enable the following option. When this 

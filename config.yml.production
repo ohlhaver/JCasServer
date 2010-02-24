@@ -168,5 +168,6 @@ log:
 
 maximum_unused_login_ticket_lifetime: 300
 maximum_unused_service_ticket_lifetime: 300
-maximum_session_lifetime: 172800
+maximum_session_lifetime: 86400
+remember_me_session_lifetime: 864000
 downcase_username: true
