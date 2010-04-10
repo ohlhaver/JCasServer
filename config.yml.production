@@ -63,6 +63,7 @@ authenticator:
       reconnect: true
     user_table: users
     encryptor: Sha256
+    encrypt_function: 'user.crypted_password == Digest::SHA1.hexdigest("--#{user.old_password_salt}--#{@password}--")'
     preferences_table: preferences
     preference_attributes:
       user_id: owner_id
@@ -77,6 +78,7 @@ authenticator:
       username: login
       password: crypted_password
       salt: password_salt
+      old_salt: old_password_salt
   - class: CASServer::Authenticators::Facebook
     database:
       adapter: mysql

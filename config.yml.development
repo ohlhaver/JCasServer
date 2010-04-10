@@ -107,6 +107,7 @@ authenticator:
     username_column: login
     password_column: crypted_password
     salt_column: password_salt
+    encrypt_function: 'user.crypted_password == Digest::SHA1.hexdigest("--#{user.old_password_salt}--#{@password}--")'
     encryptor: Sha256
     extra_attributes: id
   - class: CASServer::Authenticators::Google

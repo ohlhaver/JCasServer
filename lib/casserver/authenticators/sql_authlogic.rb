@@ -50,11 +50,12 @@ class CASServer::Authenticators::SQLAuthlogic < CASServer::Authenticators::SQL
     
     user_model, preference_model = establish_database_connection_if_necessary
     
-    username_column = @options[:user_attributes][:username]
+    username_column = @options[:user_attributes][:username].to_s.downcase.gsub(' ', '_')
     password_column = @options[:user_attributes][:password]
     salt_column     = @options[:user_attributes][:salt]
+    encrypt_function = @options[:encrypt_function] || 'user.encrypted_password == Digest::SHA256.hexdigest("#{user.encryption_salt}::#{@password}")'
     
-    results = user_model.find(:all, :select => @options[:user_attributes].values.join(',') , :conditions => ["#{username_column} = ?", @username])
+    results = user_model.find(:all, :select => @options[:user_attributes].values.join(',') , :conditions => ["#{username_column} = ?", @username ])
 
     begin
       encryptor = eval("Authlogic::CryptoProviders::" + @options[:encryptor] || "Sha512")
@@ -65,11 +66,7 @@ class CASServer::Authenticators::SQLAuthlogic < CASServer::Authenticators::SQL
     if results.size > 0
       $LOG.warn("Multiple matches found for user '#{@username}'") if results.size > 1
       user = results.first
-      tokens = [@password, (not salt_column.nil?) && user.send(salt_column) || nil].compact
-      crypted = user.send(password_column)
-
       @extra_attributes = { 'auth' => 'jurnalo' }
-      
       user_id_column = @options[:preference_attributes][:user_id]
       user_type_column = @options[:preference_attributes][:user_type]
       conditions = { user_id_column => user.id }
@@ -84,8 +81,13 @@ class CASServer::Authenticators::SQLAuthlogic < CASServer::Authenticators::SQL
         @extra_attributes[ key.to_s ] = user.send( value )
       end
       $LOG.debug("#{self.class}: Read the following extra_attributes for user #{@username.inspect}: #{@extra_attributes.inspect}")
-      
-      return encryptor.matches?(crypted, tokens)
+      if !salt_column.nil? && user.send(salt_column).blank?
+        return eval(encrypt_function)
+      else
+        tokens = [@password, (not salt_column.nil?) && user.send(salt_column) || nil].compact
+        crypted = user.send(password_column)
+        return encryptor.matches?(crypted, tokens)
+      end
     else
       return false
     end
