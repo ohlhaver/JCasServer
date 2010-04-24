@@ -40,6 +40,7 @@ module CASServer::Controllers
       begin
         if @service 
           if !@renew && tgt && !tgt_error
+            setup_cookie_tgt(tgt)
             st = generate_service_ticket(@service, tgt.username, tgt)
             service_with_ticket = service_uri_with_ticket(@service, st)
             $LOG.info("User '#{tgt.username}' authenticated based on ticket granting cookie. Redirecting to service '#{@service}'.")
@@ -212,13 +213,13 @@ module CASServer::Controllers
         nil
       end
       cookies['tgt'] = if expires
-        expiry_info = " It will expire on #{expires}."
+        expiry_info = "It will expire on #{expires}."
         { :value => tgt.to_s, :expires => expires }
       else
-        expiry_info = " It will not expire."
+        expiry_info = "It will expire at the end of the session."
         tgt.to_s
       end
-      $LOG.debug("Ticket granting cookie '#{cookies['tgt'].inspect}' granted to #{@username.inspect}. #{expiry_info}")
+      $LOG.info("Ticket granting cookie '#{cookies['tgt'].inspect}' granted to #{@username.inspect}. #{expiry_info}")
     end
     
   end
