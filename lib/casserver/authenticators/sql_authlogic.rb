@@ -53,6 +53,7 @@ class CASServer::Authenticators::SQLAuthlogic < CASServer::Authenticators::SQL
     username_column = @options[:user_attributes][:username].to_s.downcase.gsub(' ', '_')
     password_column = @options[:user_attributes][:password]
     salt_column     = @options[:user_attributes][:salt]
+    old_salt_column = @options[:user_attributes][:old_salt]
     encrypt_function = @options[:encrypt_function] || 'user.encrypted_password == Digest::SHA256.hexdigest("#{user.encryption_salt}::#{@password}")'
     
     results = user_model.find(:all, :select => @options[:user_attributes].values.join(',') , :conditions => ["#{username_column} = ?", @username ])
@@ -77,7 +78,7 @@ class CASServer::Authenticators::SQLAuthlogic < CASServer::Authenticators::SQL
         @extra_attributes[ key.to_s ] = preference.send( value )
       end
       @options[:user_attributes].each do | key, value |
-        next if [ username_column, password_column, salt_column ].include?( value )
+        next if [ username_column, password_column, salt_column, old_salt_column ].include?( value )
         @extra_attributes[ key.to_s ] = user.send( value )
       end
       $LOG.debug("#{self.class}: Read the following extra_attributes for user #{@username.inspect}: #{@extra_attributes.inspect}")
