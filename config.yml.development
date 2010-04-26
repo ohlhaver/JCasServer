@@ -479,3 +479,4 @@ remember_me_session_lifetime: 864000
 # convert this to "jsmith".
 
 downcase_username: true
+login_form_url: http://localhost:3000/login

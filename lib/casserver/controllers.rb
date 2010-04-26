@@ -90,7 +90,8 @@ module CASServer::Controllers
       when 'js'
         render :login_js
       else
-        render :login
+        #render :login
+        return redirect($CONF.login_form_url, :status => 303)
       end
       
     end

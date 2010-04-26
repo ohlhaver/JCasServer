@@ -173,3 +173,4 @@ maximum_unused_service_ticket_lifetime: 300
 maximum_session_lifetime: 86400
 remember_me_session_lifetime: 2592000
 downcase_username: true
+login_form_url: http://accounts.jurnalo.com/login
