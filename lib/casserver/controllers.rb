@@ -1,6 +1,6 @@
 # The #.#.# comments (e.g. "2.1.3") refer to section numbers in the CAS protocol spec
 # under http://www.ja-sig.org/products/cas/overview/protocol/index.html
-
+require 'cgi'
 require 'casserver/cas'
 
 module CASServer::Controllers
@@ -20,6 +20,8 @@ module CASServer::Controllers
       
       # optional params
       @service = clean_service_url(input['service'])
+      @service = CGI.unescape( service ) if @service[4,3] == '%3A'
+    
       @renew = input['renew']
       @gateway = input['gateway'] == 'true' || input['gateway'] == '1'
       
