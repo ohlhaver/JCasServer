@@ -20,7 +20,7 @@ module CASServer::Controllers
       
       # optional params
       @service = clean_service_url(input['service'])
-      @service = CGI.unescape( service ) if @service[4,3] == '%3A'
+      @service = CGI.unescape( service ) if @service && @service[4,3] == '%3A'
     
       @renew = input['renew']
       @gateway = input['gateway'] == 'true' || input['gateway'] == '1'
