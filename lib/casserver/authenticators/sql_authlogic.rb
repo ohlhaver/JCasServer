@@ -50,12 +50,13 @@ class CASServer::Authenticators::SQLAuthlogic < CASServer::Authenticators::SQL
     
     user_model, preference_model = establish_database_connection_if_necessary
     
-    username_column = @options[:user_attributes][:username].to_s.downcase.gsub(' ', '_')
+    username_column = @options[:user_attributes][:username]
     password_column = @options[:user_attributes][:password]
     salt_column     = @options[:user_attributes][:salt]
     old_salt_column = @options[:user_attributes][:old_salt]
     encrypt_function = @options[:encrypt_function] || 'user.encrypted_password == Digest::SHA256.hexdigest("#{user.encryption_salt}::#{@password}")'
     
+    @username = @username.to_s.downcase.gsub(' ', '_')
     results = user_model.find(:all, :select => @options[:user_attributes].values.join(',') , :conditions => ["#{username_column} = ?", @username ])
 
     begin
