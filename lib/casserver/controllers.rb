@@ -39,6 +39,9 @@ module CASServer::Controllers
           :message => _("The client and server are unable to negotiate authentication. Please try logging in again later.")}
       end
       
+      # Setting of TGT cookie is required from JCasServer
+      cookies.clear
+      
       begin
         if @service 
           if !@renew && tgt && !tgt_error
@@ -215,6 +218,11 @@ module CASServer::Controllers
       else
         nil
       end
+      #require 'pp'
+      #puts "-"*80
+      #pp cookies
+      #puts "-"*80
+      cookies.clear
       cookies['tgt'] = if expires
         expiry_info = "It will expire on #{expires}."
         { :value => tgt.to_s, :expires => expires }
@@ -247,6 +255,7 @@ module CASServer::Controllers
       tgt = CASServer::Models::TicketGrantingTicket.find_by_ticket(cookies['tgt'])
       
       cookies.delete 'tgt'
+      cookies.clear
       
       if tgt
         CASServer::Models::TicketGrantingTicket.transaction do
