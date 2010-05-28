@@ -75,11 +75,11 @@ class CASServer::Authenticators::SQLAuthlogic < CASServer::Authenticators::SQL
       conditions.merge!( user_type_column => (@options[:users_table] || 'users').classify ) unless user_type_column.blank?
       preference = preference_model.find( :first, :select => @options[:preference_attributes].values.join(','), :conditions => conditions )
       @options[:preference_attributes].each do | key, value |
-        next if [ user_id_column, user_type_column ].include?( value )
+        next if [ 'user_id', 'user_type' ].include?( key.to_s )
         @extra_attributes[ key.to_s ] = preference.send( value )
       end
       @options[:user_attributes].each do | key, value |
-        next if [ username_column, password_column, salt_column, old_salt_column ].include?( value )
+        next if %w(password salt old_salt username fb_user_id fb_access_token).include?( key.to_s )
         @extra_attributes[ key.to_s ] = user.send( value )
       end
       $LOG.debug("#{self.class}: Read the following extra_attributes for user #{@username.inspect}: #{@extra_attributes.inspect}")

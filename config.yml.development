@@ -94,7 +94,6 @@ database:
   password: 
   host: localhost
   
-
 authenticator:
   - class: CASServer::Authenticators::SQLAuthlogic
     database:
@@ -104,14 +103,46 @@ authenticator:
       password:
       server: localhost
     user_table: users
-    username_column: login
-    password_column: crypted_password
-    salt_column: password_salt
-    encrypt_function: 'user.crypted_password == Digest::SHA1.hexdigest("--#{user.old_password_salt}--#{@password}--")'
     encryptor: Sha256
-    extra_attributes: id
-  - class: CASServer::Authenticators::Google
-##### AUTHENTICATION ###########################################################
+    encrypt_function: 'user.crypted_password == Digest::SHA1.hexdigest("--#{user.old_password_salt}--#{@password}--")'
+    preferences_table: preferences
+    preference_attributes:
+      user_id: owner_id
+      user_type: owner_type
+      locale_id: interface_language_id
+      edition_region_id: region_id
+      edition_locale_id: default_language_id
+    user_attributes: 
+      id: id
+      active: active
+      name: name
+      username: login
+      password: crypted_password
+      salt: password_salt
+      old_salt: old_password_salt
+      fb_user_id: facebook_uid
+      fb_access_token: single_access_token
+  - class: CASServer::Authenticators::Facebook
+  # - class: CASServer::Authenticators::Google
+  #   database:
+  #     adapter: mysql
+  #     database: tier2_db_dev
+  #     user: root
+  #     password:
+  #     server: localhost
+  #   user_table: users
+  #   preferences_table: preferences
+  #   preference_attributes:
+  #     user_id: owner_id
+  #     user_type: owner_type
+  #     locale_id: interface_language_id
+  #     edition_region_id: region_id
+  #     edition_locale_id: default_language_id
+  #   user_attributes: 
+  #     id: id
+  #     active: active
+  #     name: name
+  #     username: email##### AUTHENTICATION ###########################################################
 
 # Configure how username/passwords are validated.
 #

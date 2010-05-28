@@ -12,7 +12,10 @@ module CASServer::Controllers
     # 2.1.1
     def get
       CASServer::Utils::log_controller_action(self.class, input)
-      
+      if input['fb'] == '1'
+        do_auto_facebook_login
+        return
+      end
       # make sure there's no caching
       headers['Pragma'] = 'no-cache'
       headers['Cache-Control'] = 'no-store'
@@ -99,6 +102,67 @@ module CASServer::Controllers
         return redirect($CONF.login_form_url, :status => 303)
       end
       
+    end
+    
+    def do_auto_facebook_login
+      @service = clean_service_url(input['service'])
+      @username = input['u']
+      @password = input['p']
+      credentials_are_valid = false
+      extra_attributes = {}
+      successful_authenticator = nil
+      begin
+        auth_index = 0
+        $AUTH.each do |auth_class|
+          auth = auth_class.new
+          next unless auth.respond_to?( :facebook? ) && auth.facebook?
+          auth.configure($CONF.authenticator[auth_index].merge(:auth_index => auth_index))
+          credentials_are_valid = auth.validate(
+            :username => @username, 
+            :password => @password, 
+            :service => @service,
+            :request => @env
+          )
+          if credentials_are_valid
+            extra_attributes.merge!(auth.extra_attributes) unless auth.extra_attributes.blank?
+            successful_authenticator = auth
+            break 
+          end
+          auth_index += 1
+        end
+      rescue CASServer::AuthenticatorError => e
+        $LOG.error(e)
+        @message = {:type => 'mistake', :message => e.to_s}
+        return render_login
+      end
+      if credentials_are_valid
+        $LOG.info("Credentials for username '#{@username}' successfully validated using #{successful_authenticator.class.name}.")
+        $LOG.debug("Authenticator provided additional user attributes: #{extra_attributes.inspect}") unless extra_attributes.blank?
+        # 3.6 (ticket-granting cookie)
+        tgt = generate_ticket_granting_ticket(@username, extra_attributes)
+        setup_cookie_tgt(tgt)
+        if @service.blank?
+          $LOG.info("Successfully authenticated user '#{@username}' at '#{tgt.client_hostname}'. No service param was given, so we will not redirect.")
+          @message = {:type => 'confirmation', :message => _("You have successfully logged in.")}
+        else
+          @st = generate_service_ticket(@service, @username, tgt)
+          begin
+            service_with_ticket = service_uri_with_ticket(@service, @st)
+            
+            $LOG.info("Redirecting authenticated user '#{@username}' at '#{@st.client_hostname}' to service '#{@service}'")
+            return redirect(service_with_ticket, :status => 303) # response code 303 means "See Other" (see Appendix B in CAS Protocol spec)
+          rescue URI::InvalidURIError
+            $LOG.error("The service '#{@service}' is not a valid URI!")
+            @message = {:type => 'mistake', 
+              :message => _("The target service your browser supplied appears to be invalid. Please contact your system administrator for help.")}
+          end
+        end
+      else
+        $LOG.warn("Invalid credentials given for user '#{@username}'")
+        @message = {:type => 'mistake', :message => _("Incorrect username or password.")}
+        @status = 401
+      end
+      return redirect($CONF.login_form_url, :status => 303)
     end
     
     # 2.2
