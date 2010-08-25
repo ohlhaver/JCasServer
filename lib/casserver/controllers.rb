@@ -275,6 +275,7 @@ module CASServer::Controllers
     private
     
     def service_domain( service = @service )
+      service = CGI.unescape( service ) if service && service[4,3] == '%3A'
       domain = URI.parse( service || 'http://www.jurnalo.com' ).host rescue nil
       domain.split('.')[-2,2].join('.')
     end
@@ -297,7 +298,7 @@ module CASServer::Controllers
         { :value => tgt.to_s, :expires => expires, :domain => service_domain }
       else
         expiry_info = "It will expire at the end of the session."
-        tgt.to_s
+        { :value => tgt.to_s, :domain => service_domain }
       end
       $LOG.info("Ticket granting cookie '#{cookies['tgt'].inspect}' granted to #{@username.inspect}. #{expiry_info}")
     end
