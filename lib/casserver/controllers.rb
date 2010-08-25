@@ -274,6 +274,11 @@ module CASServer::Controllers
     
     private
     
+    def service_domain( service = @service )
+      domain = URI.parse( service || 'http://www.jurnalo.com' ).host rescue nil
+      domain.split('.')[-2,2].join('.')
+    end
+    
     def setup_cookie_tgt(tgt)
       expires = if $CONF.remember_me_session_lifetime && input['remember-me']
         $CONF.remember_me_session_lifetime.to_i.from_now
@@ -289,7 +294,7 @@ module CASServer::Controllers
       cookies.clear
       cookies['tgt'] = if expires
         expiry_info = "It will expire on #{expires}."
-        { :value => tgt.to_s, :expires => expires }
+        { :value => tgt.to_s, :expires => expires, :domain => service_domain }
       else
         expiry_info = "It will expire at the end of the session."
         tgt.to_s
